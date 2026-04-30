@@ -1,33 +1,16 @@
-# Prediction
 
-Predict geospatial labels from location embeddings or sparse codes.
+1. Download datasets:
+    bash: cd datasets
 
-## Pipeline
+    EuroSAT: python EuroSAT.py --download --root /data/
 
-### 1. Download data
-```bash
-python prediction/download_locbench.py /path/to/data/dir
-```
-Each dataset needs split files (`train.csv`/`val.csv`/`test.csv` or `train.json`/`val.json`/`test.json`, or a single `data.csv`/`.json` that gets auto-split) with `lat`, `lon`, and `value` columns.
+    For the MOSAIKS datasets, I will provide them on google drive (can be downloaded on code ocean)
 
-### 2. Generate embeddings or sparse codes
-```bash
-# Earth embeddings (satclip or geoclip)
-python -m prediction.generate_embeddings \
-    --encoder satclip --dataset_root /data/mosaiks/elevation --out_dir /data/embs
+    Make sure to update paths on datasets/paths.yaml
 
-# Sparse codes (SpLiCE)
-python -m prediction.generate_embeddings \
-    --encoder sparse --model_path splice.pt --concepts_json concepts.json \
-    --dataset_root /data/mosaiks/elevation --out_dir /data/sparse
-```
-Saves `{encoder}_{split}.pt` or `{method}_sparse_codes_{split}.pt` per split.
+2. GeoCLIP and SatCLIP are implemented. For GeoCLIP:
+need to pip install geoclip
+for satclip, need to clone the repo in external/ (to use the get_satclip function)
+(for now, I'll just push this. I remember having to make some changes to the imports for this to work so this will be easier for now.)
 
-### 3. Train and evaluate
-```bash
-python -m prediction.main \
-    --embeddings_path /data/embs --encoder satclip \
-    --model_type ridge --out_dir /data/model
-```
-Prints test R². With sparse codes + ridge, also prints the top-k most predictive concepts.
-Model saved as `model.pkl` (ridge) or `model.pt` (MLP) in `--out_dir`.
+Note: I provided a location_encoder.py model that can be used to load satclip and geoclip. However, note that if the location model is satclip, I internally switch to the ordering lon, lat (instead of lat, lon for geoclip) so make sure not to do this yourself if using my model.

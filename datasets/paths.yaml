@@ -1,0 +1,6 @@
+eurosat: /data/eurosat
+mosaiks:
+  elevation: /data/mosaiks/elevation
+  tree_cover: /data/mosaiks/forest
+  nightlights: /data/mosaiks/nightlights
+  population_density: /data/mosaiks/population
