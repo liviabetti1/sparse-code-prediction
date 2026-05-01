@@ -3,7 +3,7 @@ import torch
 from earth_embeddings import load_or_generate as load_location_embeddings
 from splice_embeddings import load_or_generate as load_splice_embeddings
 from sparse_embeddings import load_sparse_embeddings
-from train import train_ridge
+from train import train_ridge_regression
 from eval import top_concepts
 
 from models.splice_model import _splice_cfg
@@ -61,7 +61,7 @@ def main():
     X_train, y_train = load("train")
     X_test, y_test = load("test")
 
-    model = train_ridge(X_train, y_train, alpha=args.alpha, cv=args.cv)
+    model = train_ridge_regression(X_train, y_train, alpha=args.alpha, cv=args.cv)
     print(f"R2 on test set: {model.score(X_test, y_test):.4f}")
 
     if args.embeddings == "splice":

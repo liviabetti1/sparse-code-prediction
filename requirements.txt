@@ -1,0 +1,16 @@
+einops
+geoclip
+huggingface_hub
+lightning
+lime
+matplotlib
+numpy
+pandas
+pyyaml
+scikit-learn
+shap
+timm
+torch
+torchgeo
+torchvision
+tqdm

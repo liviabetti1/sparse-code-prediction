@@ -7,7 +7,7 @@ Predict geospatial properties from location using either dense location embeddin
 ### 1. Install dependencies
 
 ```bash
-pip install geoclip
+pip install -r requirements.txt
 ```
 
 For SatCLIP, clone the repo into `external/` (should already be there right now):
@@ -22,7 +22,10 @@ cd datasets
 python EuroSAT.py --download --root /data/eurosat
 ```
 
-**MOSAIKS** (elevation, tree cover, nightlights, population density): I will put on google drive for now (also available on code ocean or TorchSpatial)
+**MOSAIKS** (elevation, tree cover, nightlights, population density): I will put on google drive for now (also available on code ocean or TorchSpatial). Note however that this does not have images, but I put because it's easy to work with.
+
+**Others**
+I'm currently working on SustainBench + GeoYFCC.
 
 ### 3. Configure paths
 
