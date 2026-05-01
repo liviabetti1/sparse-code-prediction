@@ -1,6 +1,6 @@
 # Sparse Code Prediction
 
-Predict geospatial properties from location using either dense location embeddings (GeoCLIP, SatCLIP) or sparse concept-based embeddings (SPLICE, soon to add SAE support). A ridge regression is fit on top of the embeddings and evaluated on held-out test data. When using sparse embeddings, we report the top contributing concepts.
+Predict geospatial properties from location using either location embeddings (GeoCLIP, SatCLIP) or sparse concept-based embeddings (SPLICE, soon to add SAE support). A ridge regression is fit on top of the embeddings and evaluated on held-out test data. When using sparse embeddings, we report the top contributing concepts.
 
 ## Setup
 
