@@ -1,6 +1,6 @@
 # Sparse Code Prediction
 
-Predict geospatial properties from location using either location embeddings (GeoCLIP, SatCLIP) or sparse concept-based embeddings (SPLICE, soon to add SAE support). A ridge regression is fit on top of the embeddings and evaluated on held-out test data. When using sparse embeddings, we report the top contributing concepts.
+Predict geospatial properties from location using either location embeddings (GeoCLIP, SatCLIP, GAIR, Climplicit) or sparse concept-based embeddings (SPLICE, soon to add SAE support). A ridge regression is fit on top of the embeddings and evaluated on held-out test data. When using sparse embeddings, we report the top contributing concepts.
 
 ## Setup
 
@@ -45,10 +45,9 @@ datasets:
 
 ### Run ridge regression
 
-**With location embeddings (GeoCLIP or SatCLIP for now):**
+**With location embeddings (GeoCLIP, SatCLIP, GAIR, or Climplicit):**
 ```bash
 python main.py --dataset eurosat --embeddings location --encoder geoclip
-python main.py --dataset elevation --embeddings location --encoder satclip
 ```
 
 **With sparse SpLiCE embeddings:**
@@ -69,7 +68,7 @@ This prints R² on the test set, and for sparse embeddings also prints the top c
 |---|---|---|
 | `--dataset` | required | `eurosat`, `elevation`, `tree_cover`, `nightlights`, `population_density` |
 | `--embeddings` | `location` | `location`, `splice`, or `sae` |
-| `--encoder` | — | `geoclip` or `satclip` (required for `location`) |
+| `--encoder` | — | `geoclip`, `satclip`, `gair` or `climplicit` (required for `location`) |
 | `--splice_model` | — | Key from `paths.yaml` (required for `splice`) |
 | `--sae_model_path` | — | Path to SAE `.pt` checkpoint (required for `sae`) |
 | `--topk` | `10` | Number of top concepts to report |
@@ -94,4 +93,6 @@ Embeddings are saved to the dataset directory (or `--output_dir`) and loaded aut
 
 ## LocationEncoder note
 
-`models/location_encoder.py` provides a unified wrapper around GeoCLIP and SatCLIP. Both expect `(lat, lon)` as input — the wrapper internally reorders to `(lon, lat)` for SatCLIP. IMPORTANT: Do not do this reordering yourself IF you use the wrapper.
+`models/location_encoder.py` provides a unified wrapper around GeoCLIP and SatCLIP. Both expect `(lat, lon)` as input — the wrapper internally reorders to `(lon, lat)` for SatCLIP, GAIR, and Climplicit. IMPORTANT: Do not do this reordering yourself IF you use the wrapper.
+
+Additionally, Climplicit can accept a month as input as well (in addition to lat lon coordinates). Currently, no month is input, which defaults getting the Climplicit embeddings for 4 months out of the year.

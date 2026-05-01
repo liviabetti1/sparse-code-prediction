@@ -9,15 +9,20 @@ from external.satclip.satclip.load import get_satclip
 LOCATION_EMBEDDING_DIMENSIONS = {
     "geoclip": 512,
     "satclip": 256,
+    "gair": 768,
+    "climplicit": 256
 }
 
 LOCATION_MODEL_IDS = {
     "satclip": "microsoft/SatCLIP-ViT16-L40",
     # might need to include L10 as well, or can also look at ResNet-based models
+    "climplicit": "Jobedo/climplicit",
+    "gair": "PingL/GAIR"
 }
 
 LOCATION_MODEL_CHECKPOINTS = {
     "satclip": "satclip-vit16-l40.ckpt",
+    "gair": "checkpoint.pth"
 }
 
 def load_location_encoder(location_model: str, device: str = "cuda:0"):
@@ -42,7 +47,8 @@ class LocationEncoder(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         assert x.shape[1] == 2, "Forward expects (lat, lon) pairs"
-        x = x[:, [1, 0]].double() if self.location_model == "satclip" else x.float() 
+        x = x[:, [1, 0]] if self.location_model in ["satclip", "gair", "climplicit"] else x
+        x = x.double() if self.location_model in ["satclip"] else x.float()
 
         enc_device = next(self.location_encoder.parameters()).device
         if x.device != enc_device:
@@ -59,13 +65,27 @@ class LocationEncoder(nn.Module):
     def _load_location_model(self):
         """Load a pretrained location encoder."""
         if self.location_model == "satclip":
+            from external.satclip.satclip.load import get_satclip
+            from huggingface_hub import hf_hub_download
             self.location_encoder = get_satclip(
                 hf_hub_download(LOCATION_MODEL_IDS["satclip"], LOCATION_MODEL_CHECKPOINTS["satclip"]),
                 device=self.device,
             )
+        
         elif self.location_model == "geoclip":
             from geoclip import GeoCLIP
             self.location_encoder = GeoCLIP().location_encoder
+        
+        elif self.location_model == "climplicit":
+            from rshf.climplicit import Climplicit
+            self.location_encoder = Climplicit.from_pretrained(LOCATION_MODEL_IDS["climplicit"], config={"return_chelsa": False})
+        
+        elif self.location_model == "gair":
+            from huggingface_hub import hf_hub_download
+            from external.GAIR.gair import GAIRModel
+            checkpoint = hf_hub_download(repo_id=LOCATION_MODEL_IDS["gair"], filename=LOCATION_MODEL_CHECKPOINTS["gair"])
+            model = GAIRModel.from_checkpoint(checkpoint, device=self.device, query_mode="nili")
+            self.location_encoder = model.location_encoder
+
         else:
             raise ValueError(f"Location model '{self.location_model}' is not supported")
-

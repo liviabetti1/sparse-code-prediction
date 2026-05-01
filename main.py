@@ -1,9 +1,10 @@
 import argparse, os, pickle
 import torch
+from sklearn.metrics import r2_score, accuracy_score
 from earth_embeddings import load_or_generate as load_location_embeddings
 from splice_embeddings import load_or_generate as load_splice_embeddings
 from sparse_embeddings import load_sparse_embeddings
-from train import train_ridge_regression
+from train import train
 from eval import top_concepts
 
 from models.splice_model import _splice_cfg
@@ -34,13 +35,16 @@ def get_args():
     p = argparse.ArgumentParser()
     p.add_argument("--dataset", required=True)
     p.add_argument("--embeddings", choices=["location", "splice", "sae"], default="location")
+    p.add_argument("--task", choices=['regression', "classification"], default="regression")
+    p.add_argument("--model", required=True, choices=["ridge_regression", "lasso_regression", "ridge_classifier", "logistic_regression"])
 
     # Location embeddings
-    p.add_argument("--encoder", choices=["satclip", "geoclip"])
+    p.add_argument("--encoder", choices=["satclip", "geoclip", "gair", "climplicit"])
     # OR SpLiCE model name
     p.add_argument("--splice_model")
     # OR SAE model path (can also reformat to name)
     p.add_argument("--sae_model_path")
+
     p.add_argument("--topk", type=int, default=10)
     p.add_argument("--alpha", type=float, default=1.0)
     p.add_argument("--cv", action="store_true")
@@ -53,6 +57,30 @@ def get_args():
 
 
 
+def score(model, X_test, y_test, task: str):
+    y_pred = model.predict(X_test)
+    if task == "regression":
+        metric = r2_score(y_test, y_pred)
+        print(f"R2 on test set: {metric:.4f}")
+    else:
+        metric = accuracy_score(y_test, y_pred)
+        print(f"Accuracy on test set: {metric:.4f}")
+    return metric
+
+
+def save(model, args):
+    os.makedirs(args.output_dir, exist_ok=True)
+    if args.embeddings == "location":
+        tag = f"location_encoder_{args.encoder}"
+    elif args.embeddings == "splice":
+        tag = f"splice_{args.splice_model}"
+    else:
+        tag = f"sae_{os.path.splitext(os.path.basename(args.sae_model_path))[0]}"
+    path = os.path.join(args.output_dir, f"{args.dataset}_{tag}_{args.model}.pkl")
+    with open(path, "wb") as f:
+        pickle.dump(model, f)
+
+
 def main():
     args = get_args()
     device = args.device if torch.cuda.is_available() else "cpu"
@@ -61,23 +89,20 @@ def main():
     X_train, y_train = load("train")
     X_test, y_test = load("test")
 
-    model = train_ridge_regression(X_train, y_train, alpha=args.alpha, cv=args.cv)
-    print(f"R2 on test set: {model.score(X_test, y_test):.4f}")
+    model = train(args.model, X_train, y_train, alpha=args.alpha, cv=args.cv)
+    score(model, X_test, y_test, args.task)
 
     if args.embeddings == "splice":
         root, models = _splice_cfg()
         concepts = torch.load(os.path.join(root, models[args.splice_model]["concepts"]))
-        print(f"Top {args.topk} concepts: {top_concepts(model, k=args.topk, concepts=concepts)}")
+        tc = top_concepts(model, k=args.topk, concepts=concepts)
+        if isinstance(tc, dict):
+            for cls, concepts_ in tc.items():
+                print(f"Class {cls} top {args.topk} concepts: {concepts_}")
+        else:
+            print(f"Top {args.topk} concepts: {tc}")
 
-    os.makedirs(args.output_dir, exist_ok=True)
-    if args.embeddings == "location":
-        tag = f"location_encoder_{args.encoder}"
-    elif args.embeddings == "splice":
-        tag = f"splice_{args.splice_model}"
-    else:
-        tag = f"sae_{os.path.splitext(os.path.basename(args.sae_model_path))[0]}"
-    with open(os.path.join(args.output_dir, f"{args.dataset}_{tag}_ridge.pkl"), "wb") as f:
-        pickle.dump(model, f)
+    save(model, args)
 
 
 if __name__ == "__main__":
