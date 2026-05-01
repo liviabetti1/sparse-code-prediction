@@ -20,7 +20,7 @@ def get_args():
     p.add_argument("--output_dir", type=str, default=None)
     return p.parse_args()
 
-def load_or_generate(encoder_name, dataset_name, split, batch_size=None, device=None, output_dir=None):
+def load_or_generate(encoder_name, dataset_name, split, batch_size=2048, device=None, output_dir=None):
     filename = embeddings_path_template.format(dataset=dataset_name, encoder=encoder_name, split=split)
     out_dir = output_dir or get_dataset_dir(dataset_name)
     path = os.path.join(out_dir, filename)
