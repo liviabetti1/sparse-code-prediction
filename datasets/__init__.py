@@ -4,7 +4,7 @@ from pathlib import Path
 from datasets.EuroSAT import EuroSAT
 from datasets.MOSAIKS import MOSAIKSDataset
 
-_paths = yaml.safe_load((Path(__file__).parent / "paths.yaml").read_text())
+_paths = yaml.safe_load((Path(__file__).parent.parent / "paths.yaml").read_text())["datasets"]
 
 _MOSAIKS_DATASETS = {"elevation", "tree_cover", "nightlights", "population_density"}
 

@@ -193,7 +193,7 @@ class EuroSAT(NonGeoClassificationDataset):
         if self.return_locations:
             row = self.locations.iloc[index]
             assert path == row['filepath'], f"Path mismatch: {path} vs {row['filepath']}" # for me to check for now
-            sample['location'] = torch.tensor([row['lon'], row['lat']], dtype=torch.float)
+            sample['location'] = torch.tensor([row['lat'], row['lon']], dtype=torch.float)
 
         return sample
 

@@ -4,14 +4,14 @@ import shap
 from lime.lime_tabular import LimeTabularExplainer
 
 
-def top_concepts(model: Ridge | RidgeCV, k: int = 10, concept_labels=None):
+def top_concepts(model: Ridge | RidgeCV, k: int = 10, concepts=None, abs_val=True):
     weights = np.asarray(model.coef_)
-    topk = lambda w: np.argsort(np.abs(w))[::-1][:k]
-    if weights.ndim == 1:
-        return topk(weights)
-    labels = concept_labels if concept_labels is not None else range(len(weights))
-    return {cls: topk(row) for cls, row in zip(labels, weights)}
-
+    if abs_val:
+        weights = np.abs(weights)
+    topk_idx = np.argsort(weights)[::-1][:k]
+    labels = np.array(concepts) if concepts is not None else np.arange(len(weights))
+    return labels[topk_idx].tolist()
+ 
 
 def shap_explanations(model, X):
     """Returns SHAP values array (n_samples, n_features)."""

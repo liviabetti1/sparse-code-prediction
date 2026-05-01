@@ -1,0 +1,17 @@
+datasets:
+  eurosat: /data/eurosat
+  mosaiks:
+    elevation: /data/mosaiks/elevation
+    tree_cover: /data/mosaiks/treecover
+    nightlights: /data/mosaiks/nightlights
+    population_density: /data/mosaiks/population
+
+splice:
+  root: /home/libe2152/projects/explainable-earth-embeddings/splice_results
+  models:
+    geoclip_geoyfcc:
+      model: geoclip/geoyfcc_concept_set/splice_model.pt
+      concepts: geoclip/geoyfcc_concept_set/concepts.pt
+    satclip_geospatial:
+      model: "txt-open_clip_vit_h__loc-satclip__tproj-linear__lproj-none__tft-lora__lft-only_proj__lora_r-8__loss-clip_symmetric__lr-0.0001__h-4bb7c457/augmented_concepts/splice_model.pt"
+      concepts: "txt-open_clip_vit_h__loc-satclip__tproj-linear__lproj-none__tft-lora__lft-only_proj__lora_r-8__loss-clip_symmetric__lr-0.0001__h-4bb7c457/augmented_concepts/concepts.pt"

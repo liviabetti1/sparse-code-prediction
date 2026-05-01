@@ -29,7 +29,6 @@ class LocationEncoder(nn.Module):
     def __init__(
         self,
         location_model: str = None,
-        normalize: bool = True,
         device: str = "cuda:0"
     ):
         super().__init__()
@@ -39,7 +38,7 @@ class LocationEncoder(nn.Module):
         self.device = device
 
         self._load_location_model()
-        self.normalize = normalize
+        #self.normalize = normalize
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         assert x.shape[1] == 2, "Forward expects (lat, lon) pairs"
@@ -50,9 +49,10 @@ class LocationEncoder(nn.Module):
             x = x.to(enc_device, non_blocking=True)
 
         embedding = self.location_encoder(x).float()
+        # embedding = F.normalize(embedding, dim=-1)
 
-        if self.normalize:
-            embedding = F.normalize(embedding, dim=-1)
+        # if self.normalize:
+        #     embedding = F.normalize(embedding, dim=-1)
 
         return embedding
 

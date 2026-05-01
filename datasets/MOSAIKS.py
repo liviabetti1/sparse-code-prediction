@@ -82,7 +82,7 @@ class MOSAIKSDataset(Dataset):
         value = row[f'{self.label_col}']
 
         return {
-            'location': torch.tensor([lon, lat], dtype=torch.float),
+            'location': torch.tensor([lat, lon], dtype=torch.float),
             'label': torch.tensor(value, dtype=torch.float),
         }
     
