@@ -83,5 +83,5 @@ class LocationEncoder(nn.Module):
             self.location_encoder =  taxabind.get_location_encoder()
 
         else:
-            raise ValueError(f"Location model '{location_model}' is not supported")
+            raise ValueError(f"Location model '{self.location_model}' is not supported")
 
