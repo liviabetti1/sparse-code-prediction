@@ -96,10 +96,13 @@ def main():
         root, models = _splice_cfg()
         concepts = torch.load(os.path.join(root, models[args.splice_model]["concepts"]))
         tc = top_concepts(model, k=args.topk, concepts=concepts)
-        if isinstance(tc, dict):
+        if args.task == "classification":
+            tc = top_concepts(model, k=args.topk, concepts=concepts, abs_val=False) # put abs val as False for now to see what concepts are contributing to class
+            assert isinstance(tc, dict), "Error in top concepts for classification"
             for cls, concepts_ in tc.items():
                 print(f"Class {cls} top {args.topk} concepts: {concepts_}")
         else:
+            tc = top_concepts(model, k=args.topk, concepts=concepts)
             print(f"Top {args.topk} concepts: {tc}")
 
     save(model, args)

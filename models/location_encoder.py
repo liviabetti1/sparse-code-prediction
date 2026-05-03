@@ -5,25 +5,7 @@ import torch.nn.functional as F
 from huggingface_hub import hf_hub_download
 
 from external.satclip.satclip.load import get_satclip
-
-LOCATION_EMBEDDING_DIMENSIONS = {
-    "geoclip": 512,
-    "satclip": 256,
-    "gair": 768,
-    "climplicit": 256
-}
-
-LOCATION_MODEL_IDS = {
-    "satclip": "microsoft/SatCLIP-ViT16-L40",
-    # might need to include L10 as well, or can also look at ResNet-based models
-    "climplicit": "Jobedo/climplicit",
-    "gair": "PingL/GAIR"
-}
-
-LOCATION_MODEL_CHECKPOINTS = {
-    "satclip": "satclip-vit16-l40.ckpt",
-    "gair": "checkpoint.pth"
-}
+from models.utils_loc import *
 
 def load_location_encoder(location_model: str, device: str = "cuda:0"):
     """Load a pretrained location encoder."""
@@ -87,5 +69,19 @@ class LocationEncoder(nn.Module):
             model = GAIRModel.from_checkpoint(checkpoint, device=self.device, query_mode="nili")
             self.location_encoder = model.location_encoder
 
+        elif self.location_model.startswith("csp"):
+            self.location_encoder = load_csp(LOCATION_MODEL_CHECKPOINTS[location_model], device)
+
+        elif self.location_model == "sinr":
+            self.location_encoder = load_sinr(LOCATION_MODEL_CHECKPOINTS["sinr"], device)
+        
+        elif self.location_model == "taxabind":
+            from transformers import PretrainedConfig
+            from rshf.taxabind import TaxaBind
+            config = PretrainedConfig.from_pretrained(LOCATION_MODEL_IDS['taxabind'])
+            taxabind = TaxaBind(config)
+            self.location_encoder =  taxabind.get_location_encoder()
+
         else:
-            raise ValueError(f"Location model '{self.location_model}' is not supported")
+            raise ValueError(f"Location model '{location_model}' is not supported")
+
