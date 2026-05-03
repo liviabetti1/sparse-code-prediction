@@ -70,10 +70,10 @@ class LocationEncoder(nn.Module):
             self.location_encoder = model.location_encoder
 
         elif self.location_model.startswith("csp"):
-            self.location_encoder = load_csp(LOCATION_MODEL_CHECKPOINTS[location_model], device)
+            self.location_encoder = load_csp(LOCATION_MODEL_CHECKPOINTS[self.location_model], self.device)
 
         elif self.location_model == "sinr":
-            self.location_encoder = load_sinr(LOCATION_MODEL_CHECKPOINTS["sinr"], device)
+            self.location_encoder = load_sinr(LOCATION_MODEL_CHECKPOINTS["sinr"], self.device)
         
         elif self.location_model == "taxabind":
             from transformers import PretrainedConfig
