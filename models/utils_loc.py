@@ -1,30 +1,25 @@
 import torch
 import torch.nn as nn
+from paths import load_paths
+
+_enc = load_paths()["location_encoders"]
 
 LOCATION_EMBEDDING_DIMENSIONS = {
-    "geoclip": 512,
-    "satclip": 256,
-    "gair": 768,
-    "climplicit": 1024, # this defaults to 256 dim embeddings times 4 months!
-    "csp_fmow": 512,
-    "csp_inat": 512,
-    "sinr": 256
+    k: v["dim"]
+    for k, v in _enc.items()
+    if isinstance(v, dict) and "dim" in v
 }
 
 LOCATION_MODEL_IDS = {
-    "satclip": "microsoft/SatCLIP-ViT16-L40",
-    # might need to include L10 as well, or can also look at ResNet-based models
-    "climplicit": "Jobedo/climplicit",
-    "gair": "PingL/GAIR",
-    "taxabind": "MVRL/taxabind-config"
+    k: v["model_id"]
+    for k, v in _enc.items()
+    if isinstance(v, dict) and "model_id" in v
 }
 
 LOCATION_MODEL_CHECKPOINTS = {
-    "satclip": "satclip-vit16-l40.ckpt",
-    "gair": "checkpoint.pth",
-    "csp_fmow": "~/data/csp/model_dir/model_fmow/model_fmow_gridcell_0.0010_32_0.1000000_1_512_gelu_UNSUPER-contsoftmax_0.000050_1.000_1_0.100_TMP1.0000_1.0000_1.0000.pth.tar",
-    "csp_inat": "~/data/csp/model_dir/model_inat/model_inat_2018_gridcell_0.0010_32_0.1000000_1_512_leakyrelu_UNSUPER-contsoftmax_0.000500_1.000_1_1.000_TMP20.0000_1.0000_1.0000.pth.tar",
-    "sinr": "external/sinr/pretrained_models/model_an_full_input_enc_sin_cos_hard_cap_num_per_class_1000.pt",
+    k: v["checkpoint"]
+    for k, v in _enc.items()
+    if isinstance(v, dict) and "checkpoint" in v
 }
 
 def load_sinr(checkpoint_path, device):

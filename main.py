@@ -8,6 +8,9 @@ from train import train
 from eval import top_concepts
 
 from models.splice_model import _splice_cfg
+from paths import load_paths as _load_paths
+
+_PRED_CFG = _load_paths()["prediction"]
 
 
 
@@ -51,7 +54,7 @@ def get_args():
     p.add_argument("--device", default="cuda:0")
     p.add_argument("--batch_size", type=int, default=512)
     p.add_argument("--embeddings_dir", default=None)
-    p.add_argument("--output_dir", default="outputs")
+    p.add_argument("--output_dir", default=_PRED_CFG["outputs"]["ridge_results"])
     p.add_argument("--seed", type=int, default=42)
     return p.parse_args()
 
@@ -93,11 +96,10 @@ def main():
     score(model, X_test, y_test, args.task)
 
     if args.embeddings == "splice":
-        root, models = _splice_cfg()
-        concepts = torch.load(os.path.join(root, models[args.splice_model]["concepts"]))
-        tc = top_concepts(model, k=args.topk, concepts=concepts)
+        splice_cfg = _splice_cfg()
+        concepts = torch.load(splice_cfg[args.splice_model]["concepts"])
         if args.task == "classification":
-            tc = top_concepts(model, k=args.topk, concepts=concepts, abs_val=False) # put abs val as False for now to see what concepts are contributing to class
+            tc = top_concepts(model, k=args.topk, concepts=concepts, abs_val=False)
             assert isinstance(tc, dict), "Error in top concepts for classification"
             for cls, concepts_ in tc.items():
                 print(f"Class {cls} top {args.topk} concepts: {concepts_}")

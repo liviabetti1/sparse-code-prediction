@@ -1,0 +1,7 @@
+git-10m:
+  root: "${project_dir}/data/git-10m/concept_dictionaries"
+  geospatial_all: "${root}/concept_dictionary_n500000.json"
+  geospatial: "${root}/augmented_concepts.json"
+
+geoyfcc:
+  path: "${projects_dir}/eda/0_vocabs/geoyfcc_concept_set.json"

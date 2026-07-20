@@ -1,0 +1,33 @@
+root: "${project_dir}/splice_results"
+
+geoclip_geospatial_all:
+  model: "${root}/geoclip/concept_dictionary_n500000/splice_model.pt"
+  concepts: "${root}/geoclip/concept_dictionary_n500000/concepts.pt"
+
+geoclip_geoyfcc:
+  model: "${root}/geoclip/geoyfcc_concept_set/splice_model.pt"
+  concepts: "${root}/geoclip/geoyfcc_concept_set/concepts.pt"
+
+satclip_geospatial:
+  model: "${root}/txt-open_clip_vit_l__loc-satclip__tproj-linear__lproj-none__tft-lora__lft-only_proj__lora_r-8__loss-clip_symmetric__lr-0.0001__h-73876bb2/augmented_concepts/splice_model.pt"
+  concepts: "${root}/txt-open_clip_vit_l__loc-satclip__tproj-linear__lproj-none__tft-lora__lft-only_proj__lora_r-8__loss-clip_symmetric__lr-0.0001__h-73876bb2/augmented_concepts/concepts.pt"
+
+satclip_geospatial_all:
+  model: "${root}/txt-open_clip_vit_l__loc-satclip__tproj-linear__lproj-none__tft-lora__lft-only_proj__lora_r-8__loss-clip_symmetric__lr-0.0001__h-73876bb2/concept_dictionary_n500000/splice_model.pt"
+  concepts: "${root}/txt-open_clip_vit_l__loc-satclip__tproj-linear__lproj-none__tft-lora__lft-only_proj__lora_r-8__loss-clip_symmetric__lr-0.0001__h-73876bb2/concept_dictionary_n500000/concepts.pt"
+
+climplicit_geospatial_all:
+  model: "${root}/txt-open_clip_vit_l__loc-climplicit__tproj-linear__lproj-none__tft-lora__lft-only_proj__lora_r-8__loss-clip_symmetric__lr-0.0001__h-a341ad85/concept_dictionary_n500000/splice_model.pt"
+  concepts: "${root}/txt-open_clip_vit_l__loc-climplicit__tproj-linear__lproj-none__tft-lora__lft-only_proj__lora_r-8__loss-clip_symmetric__lr-0.0001__h-a341ad85/concept_dictionary_n500000/concepts.pt"
+
+climplicit_geospatial:
+  model: "${root}/txt-open_clip_vit_l__loc-climplicit__tproj-linear__lproj-none__tft-lora__lft-only_proj__lora_r-8__loss-clip_symmetric__lr-0.0001__h-a341ad85/augmented_concepts/splice_model.pt"
+  concepts: "${root}/txt-open_clip_vit_l__loc-climplicit__tproj-linear__lproj-none__tft-lora__lft-only_proj__lora_r-8__loss-clip_symmetric__lr-0.0001__h-a341ad85/augmented_concepts/concepts.pt"
+
+csp_fmow_geospatial_all:
+  model: "${root}/txt-open_clip_vit_l__loc-csp_fmow__tproj-linear__lproj-none__tft-lora__lft-only_proj__lora_r-8__loss-clip_symmetric__lr-0.0001__h-86357a7e/concept_dictionary_n500000/splice_model.pt"
+  concepts: "${root}/txt-open_clip_vit_l__loc-csp_fmow__tproj-linear__lproj-none__tft-lora__lft-only_proj__lora_r-8__loss-clip_symmetric__lr-0.0001__h-86357a7e/concept_dictionary_n500000/concepts.pt"
+
+csp_fmow_geospatial:
+  model: "${root}/txt-open_clip_vit_l__loc-csp_fmow__tproj-linear__lproj-none__tft-lora__lft-only_proj__lora_r-8__loss-clip_symmetric__lr-0.0001__h-86357a7e/augmented_concepts/splice_model.pt"
+  concepts: "${root}/txt-open_clip_vit_l__loc-csp_fmow__tproj-linear__lproj-none__tft-lora__lft-only_proj__lora_r-8__loss-clip_symmetric__lr-0.0001__h-86357a7e/augmented_concepts/concepts.pt"

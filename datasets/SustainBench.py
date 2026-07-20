@@ -1,262 +1,146 @@
-# Code taken from torchgeo datasets: https://github.com/torchgeo/torchgeo/blob/main/torchgeo/datasets/sustainbench_crop_yield.py
-
-# Copyright (c) TorchGeo Contributors. All rights reserved.
-# Licensed under the MIT License.
-
-"""SustainBench Crop Yield dataset."""
+"""SustainBench dataset wrappers for FMoW and DHS tasks.
+Used code from sustainbench repo.
+"""
 
 import os
-from collections.abc import Callable
-from typing import Literal
+import sys
 
-import matplotlib.pyplot as plt
-import numpy as np
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'external', 'sustainbench'))
+
+from typing import Callable
+
 import torch
-from matplotlib.figure import Figure
+import torchvision.transforms.functional as TF
+from torch.utils.data import Dataset
 
-from torchgeo.datasets.errors import DatasetNotFoundError
-from torchgeo.datasets.geo import NonGeoDataset
-from torchgeo.datasets.utils import Path, Sample, download_url, extract_archive
+from sustainbench.datasets.fmow_dataset import FMoWDataset, categories as FMOW_CATEGORIES
+from sustainbench.datasets.dhs_dataset import DHSDataset, BAND_ORDER as DHS_BAND_ORDER
 
 
-class SustainBenchCropYield(NonGeoDataset):
-    """SustainBench Crop Yield Dataset.
+class SustainBenchFMoW(Dataset):
+    """SustainBench FMoW (Functional Map of the World) dataset.
 
-    This dataset contains MODIS band histograms and soybean yield
-    estimates for selected counties in the USA, Argentina and Brazil.
-    The dataset is part of the
-    `SustainBench <https://sustainlab-group.github.io/sustainbench/docs/datasets/sdg2/crop_yield.html>`_
-    datasets for tackling the UN Sustainable Development Goals (SDGs).
+    224x224 RGB satellite images across 62 land use / building categories.
 
-    Dataset Format:
+    Returns samples as {'image': Tensor[3,224,224], 'label': LongTensor,
+                        'location': Tensor[2]} where location is [lat, lon].
 
-    * .npz files of stacked samples
-
-    Dataset Features:
-
-    * input histogram of 7 surface reflectance and 2 surface temperature
-      bands from MODIS pixel values in 32 ranges across 32 timesteps
-      resulting in 32x32x9 input images
-    * regression target value of soybean yield in metric tonnes per
-      harvested hectare
-
-    If you use this dataset in your research, please cite:
-
-    * https://doi.org/10.1145/3209811.3212707
-    * https://doi.org/10.1609/aaai.v31i1.11172
-
-    .. versionadded:: 0.5
+    Splits: 'train', 'val' (ID val by default), 'test' (OOD test).
     """
 
-    valid_countries = ('usa', 'brazil', 'argentina')
-
-    md5 = '362bad07b51a1264172b8376b39d1fc9'
-
-    url = 'https://hf.co/datasets/torchgeo/sustainbench_crop_yield/resolve/eceefda0b866c321c18baa256205d21fa6f5eb8c/soybeans_updated.zip'
-
-    dir = 'soybeans'
-
-    valid_splits = ('train', 'dev', 'test')
+    classes = FMOW_CATEGORIES
 
     def __init__(
         self,
-        root: Path = 'data',
-        split: Literal['train', 'dev', 'test'] = 'train',
-        countries: list[Literal['usa', 'brazil', 'argentina']] = ['usa'],
-        transforms: Callable[[Sample], Sample] | None = None,
+        root: str = 'data',
+        split: str = 'train',
+        transforms: Callable | None = None,
         download: bool = False,
-        checksum: bool = False,
         return_locations: bool = True,
     ) -> None:
-        """Initialize a new Dataset instance.
-
-        Args:
-            root: root directory where dataset can be found
-            split: one of "train", "dev", or "test"
-            countries: which countries to include in the dataset
-            transforms: a function/transform that takes an input sample
-                and returns a transformed version
-            download: if True, download dataset and store it in the root directory
-            checksum: if True, check the MD5 after downloading files (may be slow)
-
-        Raises:
-            AssertionError: if ``countries`` contains invalid countries or if ``split``
-                is invalid
-            DatasetNotFoundError: If dataset is not found and *download* is False.
-        """
-        assert set(countries).issubset(self.valid_countries), (
-            f'Please choose a subset of these valid countried: {self.valid_countries}.'
-        )
-        self.countries = countries
-
-        assert split in self.valid_splits, (
-            f'Pleas choose one of these valid data splits {self.valid_splits}.'
-        )
         self.split = split
-
-        self.root = root
-        self.transforms = transforms
-        self.download = download
-        self.checksum = checksum
-
-        self._verify()
-
-        self.images = []
-        self.features = []
-
-        for country in self.countries:
-            image_file_path = os.path.join(
-                self.root, self.dir, country, f'{self.split}_hists.npz'
-            )
-            target_file_path = image_file_path.replace('_hists', '_yields')
-            years_file_path = image_file_path.replace('_hists', '_years')
-            ndvi_file_path = image_file_path.replace('_hists', '_ndvi')
-
-            npz_file = np.load(image_file_path)['data']
-            target_npz_file = np.load(target_file_path)['data']
-            year_npz_file = np.load(years_file_path)['data']
-            ndvi_npz_file = np.load(ndvi_file_path)['data']
-            num_data_points = npz_file.shape[0]
-            for idx in range(num_data_points):
-                sample = npz_file[idx]
-                sample = torch.from_numpy(sample).permute(2, 0, 1).to(torch.float32)
-                self.images.append(sample)
-
-                target = target_npz_file[idx]
-                year = year_npz_file[idx]
-                ndvi = ndvi_npz_file[idx]
-
-                features = {
-                    'label': torch.tensor(target).to(torch.float32),
-                    'year': torch.tensor(int(year)),
-                    'ndvi': torch.from_numpy(ndvi).to(dtype=torch.float32),
-                }
-                self.features.append(features)
-
-        self._load_locations()
+        self.tg_transforms = transforms
         self.return_locations = return_locations
 
+        self._base = FMoWDataset(root_dir=root, download=download)
+        assert split in self._base.split_dict, (
+            f"split must be one of {list(self._base.split_dict.keys())}"
+        )
+        self._subset = self._base.get_subset(split)
+        self._indices = self._subset.indices
+
     def __len__(self) -> int:
-        """Return the number of data points in the dataset.
+        return len(self._indices)
 
-        Returns:
-            length of the dataset
-        """
-        return len(self.images)
+    def __getitem__(self, index: int) -> dict:
+        actual_idx = self._indices[index]
+        img_pil = self._base.get_input(actual_idx)
+        image = TF.to_tensor(img_pil)
+        label = self._base._y_array[actual_idx]
 
-    def __getitem__(self, index: int) -> Sample:
-        """Return an index within the dataset.
+        sample = {'image': image, 'label': label}
 
-        Args:
-            index: index to return
-
-        Returns:
-            data and label at that index
-        """
-        sample: Sample = {'image': self.images[index]}
-        sample.update(self.features[index])
-
-        if self.transforms is not None:
-            sample = self.transforms(sample)
+        if self.tg_transforms is not None:
+            sample = self.tg_transforms(sample)
 
         if self.return_locations:
-            sample['location'] = torch.tensor(self.locations[index], dtype=torch.float)
+            # full_idxs maps from index space to raw metadata rows
+            metadata_row = self._base.metadata.iloc[self._base.full_idxs[actual_idx]]
+            sample['location'] = torch.tensor(
+                [metadata_row['lat'], metadata_row['lon']], dtype=torch.float
+            )
 
         return sample
 
-    def _verify(self) -> None:
-        """Verify the integrity of the dataset."""
-        # Check if the extracted files already exist
-        pathname = os.path.join(self.root, self.dir)
-        if os.path.exists(pathname):
-            return
 
-        # Check if the zip files have already been downloaded
-        pathname = os.path.join(self.root, self.dir) + '.zip'
-        if os.path.exists(pathname):
-            self._extract()
-            return
+class SustainBenchDHS(Dataset):
+    """SustainBench DHS (Demographic and Health Surveys) dataset.
 
-        # Check if the user requested to download the dataset
-        if not self.download:
-            raise DatasetNotFoundError(self)
+    224x224x8 Landsat + nightlights imagery, predicting a continuous asset
+    wealth index (regression task).
 
-        # Download the dataset
-        self._download()
-        self._extract()
+    Returns samples as {'image': Tensor[8,H,W], 'label': FloatTensor,
+                        'location': Tensor[2]} where location is [lat, lon].
 
-    def _download(self) -> None:
-        """Download the dataset and extract it."""
-        print(f"Downloading SustainBench Crop Yield dataset split '{self.split}' for countries {self.countries} to {self.root}...")
-        download_url(
-            self.url,
-            self.root,
-            filename=self.dir + '.zip',
-            md5=self.md5 if self.checksum else None,
-        )
-        print("Extracting dataset...")
-        self._extract()
+    Bands: BLUE, GREEN, RED, SWIR1, SWIR2, TEMP1, NIR, NIGHTLIGHTS.
+    Splits: 'train', 'val' (OOD val by default), 'test' (OOD test).
+    """
 
-    def _extract(self) -> None:
-        """Extract the dataset."""
-        zipfile_path = os.path.join(self.root, self.dir) + '.zip'
-        extract_archive(zipfile_path, self.root)
+    band_names = DHS_BAND_ORDER
 
-    def _load_locations(self) -> None:
-        """Load the locations of the data points."""
-
-        self.locations = np.load(os.path.join(self.root, self.dir, f'{self.split}_locs.npz'), allow_pickle=True)['data']
-        assert not all(loc is None for loc in self.locations), 'All locations are None, something is wrong...'
-
-    def plot(
+    def __init__(
         self,
-        sample: Sample,
-        band_idx: int = 0,
-        show_titles: bool = True,
-        suptitle: str | None = None,
-    ) -> Figure:
-        """Plot a sample from the dataset.
+        root: str = 'data',
+        split: str = 'train',
+        transforms: Callable | None = None,
+        download: bool = False,
+        return_locations: bool = True,
+        fold: str = 'A',
+    ) -> None:
+        self.split = split
+        self.tg_transforms = transforms
+        self.return_locations = return_locations
 
-        Args:
-            sample: a sample return by :meth:`__getitem__`
-            band_idx: which of the nine histograms to index
-            show_titles: flag indicating whether to show titles above each panel
-            suptitle: optional suptitle to use for figure
+        self._base = DHSDataset(root_dir=root, download=download, fold=fold)
+        assert split in self._base.split_dict, (
+            f"split must be one of {list(self._base.split_dict.keys())}"
+        )
+        self._subset = self._base.get_subset(split)
+        self._indices = self._subset.indices
 
-        Returns:
-            a matplotlib Figure with the rendered sample
+    def __len__(self) -> int:
+        return len(self._indices)
 
-        """
-        image, label = sample['image'], sample['label'].item()
+    def __getitem__(self, index: int) -> dict:
+        actual_idx = self._indices[index]
+        image = self._base.get_input(actual_idx)
+        label = self._base._y_array[actual_idx]
 
-        showing_predictions = 'prediction' in sample
-        if showing_predictions:
-            prediction = sample['prediction'].item()
+        sample = {'image': image, 'label': label}
 
-        fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+        if self.tg_transforms is not None:
+            sample = self.tg_transforms(sample)
 
-        ax.imshow(image.permute(1, 2, 0)[:, :, band_idx])
-        ax.axis('off')
+        if self.return_locations:
+            row = self._base.metadata.iloc[actual_idx]
+            sample['location'] = torch.tensor(
+                [row['lat'], row['lon']], dtype=torch.float
+            )
 
-        if show_titles:
-            title = f'Label: {label:.3f}'
-            if showing_predictions:
-                title += f'\nPrediction: {prediction:.3f}'
-            ax.set_title(title)
+        return sample
 
-        if suptitle is not None:
-            plt.suptitle(suptitle)
-
-        return fig
 
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
+    parser.add_argument('--dataset', choices=['fmow', 'dhs'], required=True)
+    parser.add_argument('--root', type=str, default='data')
     parser.add_argument('--download', action='store_true')
-    parser.add_argument('--root', type=str, default='/data/sustainbench/')
     args = parser.parse_args()
-    # Specify all splits so it downloads each txt file
-    # Note: downloading already unzips!
-    _ = SustainBenchCropYield(root=args.root, split="train", download=args.download)
-    _ = SustainBenchCropYield(root=args.root, split="dev", download=args.download)
-    _ = SustainBenchCropYield(root=args.root, split="test", download=args.download)
+
+    cls = SustainBenchFMoW if args.dataset == 'fmow' else SustainBenchDHS
+    for split in ('train', 'val', 'test'):
+        ds = cls(root=args.root, split=split, download=args.download)
+        print(f'{split}: {len(ds)} samples')
+        sample = ds[0]
+        print(f"  image: {sample['image'].shape}, label: {sample['label']}, location: {sample['location']}")
